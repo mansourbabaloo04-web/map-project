@@ -1,0 +1,40 @@
+document.addEventListener("DOMContentLoaded", async () => {
+    const map = L.map("map").setView([32.0, 53.0], 6);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "© OpenStreetMap"
+    }).addTo(map);
+
+    try {
+        const res = await fetch("/get_data");
+        const data = await res.json();
+
+        data.forEach(c => {
+            let color;
+            if (c.visit_status === "بازدید شده") color = "blue";
+            else if (c.visit_status === "بازدید نشده") color = "red";
+            else color = "black";
+
+            const marker = L.circleMarker([c.lat, c.lon], {
+                color: color,
+                radius: 7,
+                fillOpacity: 0.9
+            }).addTo(map);
+
+            marker.bindPopup(`
+                <b>${c.store_name}</b><br>
+                ${c.owner_name}<br>
+                ${c.address}<br>
+                <b>وضعیت:</b> ${c.visit_status}
+            `);
+        });
+
+        if (data.length > 0) {
+            const first = data[0];
+            map.setView([first.lat, first.lon], 11);
+        }
+    } catch (err) {
+        console.error("Error loading data:", err);
+    }
+});
